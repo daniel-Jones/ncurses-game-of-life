@@ -86,6 +86,18 @@ void keyboard(int c)
 	{
 		single_shot = 1;
 	}
+	if (c == 'c')
+	{
+		int i, n;
+		for (i = 0; i < fieldheight; i++)
+		{
+			for (n = 0; n < fieldwidth; n++)
+			{
+				cells[i][n] = 0;
+				tmpcells[i][n] = 0;
+			}
+		}
+	}
 }
 
 void setup()
@@ -214,7 +226,7 @@ void draw()
 	 * draws our screen
 	 */
 	wclear(stdscr);
-	mvprintw(fieldheight + 5, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.");
+	mvprintw(fieldheight + 5, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.\n 'c' to clear the field.");
 	if (should_run == 1)
 	{
 		wattron(stdscr, COLOR_PAIR(3));
