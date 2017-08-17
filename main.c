@@ -10,11 +10,13 @@ void keyboard(int c);
 void setup();
 void logic();
 void draw();
+int neighbor_count(int y, int x);
 
 WINDOW *field;
 #define fieldwidth 42 // +2 for 20 units
 #define fieldheight 17 // +2 for 10 units
-int cells[fieldwidth][fieldwidth];
+int cells[fieldheight][fieldwidth];
+int tmpcells[fieldheight][fieldwidth];
 
 typedef struct cursor 
 {
@@ -24,6 +26,9 @@ typedef struct cursor
 } cursors;
 
 cursors cur;
+
+int should_run;
+int single_shot;
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +52,9 @@ int main(int argc, char *argv[])
 		/* program loop */
 		c = getch();
 		keyboard(c);
-		logic();
+		if (should_run || single_shot)
+			logic();
+		if (single_shot == 1) {single_shot = 0; should_run = 0;};
 		draw();
 		usleep(80000);
 	}
@@ -60,7 +67,7 @@ void keyboard(int c)
 	if (c == KEY_LEFT && cur.x >= 2)
 		cur.x--;
 	if (c == KEY_RIGHT && cur.x < fieldwidth - 2)
-		 cur.x++;
+		cur.x++;
 	if (c == KEY_UP && cur.y >= 2)
 		cur.y--;
 	if (c == KEY_DOWN && cur.y < fieldheight - 2)
@@ -70,6 +77,14 @@ void keyboard(int c)
 		int nc;
 		nc = (cells[cur.y][cur.x] == 0) ? 1 : 0; 
 		cells[cur.y][cur.x] = nc;
+	}
+	if (c == 'g')
+	{
+		should_run = (should_run == 0) ? 1 : 0;
+	}
+	if (c == 's')
+	{
+		single_shot = 1;
 	}
 }
 
@@ -94,29 +109,31 @@ void setup()
 
 	/* seed random generator */
 	srand(time(NULL));
-//	squares[x].w = rand() % 10 + 1;
+	//	squares[x].w = rand() % 10 + 1;
 	cur.y = 1;
 	cur.x = 1;
 	cur.curs = ' ';
 	field = create_newwin(fieldheight, fieldwidth, 0, 5);
+	should_run = 0;
+	single_shot = 0;
 	//wbkgd(field, COLOR_PAIR(3));
-	
+
 
 	/* random grid
-	int i;
-	int n;
-	int j = 0;
-	int prnt = 0;
-	for (i = 0; i < fieldheight; i++)
-	{
-		for (n = 0; n < fieldwidth; n++)
-		{
-			j = rand() % 2;
-			prnt = (j == 0) ? 0 : 1;
-			cells[i][n] = prnt;
-		}
-	}
-	*/
+	   int i;
+	   int n;
+	   int j = 0;
+	   int prnt = 0;
+	   for (i = 0; i < fieldheight; i++)
+	   {
+	   for (n = 0; n < fieldwidth; n++)
+	   {
+	   j = rand() % 2;
+	   prnt = (j == 0) ? 0 : 1;
+	   cells[i][n] = prnt;
+	   }
+	   }
+	   */
 }
 
 void logic()
@@ -124,6 +141,71 @@ void logic()
 	/*
 	 * logic
 	 */
+	//cells[5][5] = neighbor_count(5, 5);
+	int i;
+	int n;
+	int count;
+	//int should_be_dead = 0;
+
+	for (i = 0; i < fieldheight; i++)
+	{
+		for (n = 0; n < fieldwidth; n++)
+		{
+			count = neighbor_count(i, n);	
+			/* any live cell with < 2 neighbors dies */
+			if (cells[i][n] == 1 && count < 2)
+				tmpcells[i][n] = 0;
+			/* any live cell with > 3 neighbors dies */
+			if (cells[i][n] == 1 && count > 3)
+				tmpcells[i][n] = 0;
+			/* any live cell with 2 or 3 neighbors lives */
+			if (cells[i][n] == 1 && count == 2 || cells[i][n] == 1 && count == 3)
+				tmpcells[i][n] = 1;
+			/* any dead cell with 3 live neighbors becomes alive */
+			if (cells[i][n] == 0 && count == 3)
+				tmpcells[i][n] = 1;
+
+			//cells[i][n] = (should_be_dead == 1) ? 0 : 1;
+		}
+	}
+	for (i = 0; i < fieldheight; i++)
+	{
+		for (n = 0; n < fieldwidth; n++)
+		{
+			cells[i][n] = tmpcells[i][n];
+		}
+	}
+	usleep(90000);
+}
+
+int neighbor_count(int y, int x)
+{
+	int count = 0; // change to 0
+	/*
+	 * we need to check 8 total cells
+	 * top left (y=y-1 x=x-1), top middle (y=y-1, x=x), top right (y=y-1, x=x+1)
+	 * middle left (y=y, x=x-1),  middle right (y=y, x=x+1)
+	 * bottom left(y+y+1, x=x-1), bottom middley=y+1, x=x), bottom right(y=y+1. x=x+1)
+	 */
+	if (y - 1 > 0 && x - 1 > 0)
+		count += (cells[y - 1][x - 1] == 1) ? 1 : 0;
+	if (y - 1 > 0)
+		count += (cells[y-1][x] == 1) ? 1 : 0;
+	if (y - 1 > 0 && x + 1 < fieldwidth)
+		count += (cells[y-1][x+1] == 1) ? 1 : 0;
+
+	if (x - 1 > 0)
+		count += (cells[y][x-1] == 1) ? 1 : 0;
+	if (x + 1 < fieldwidth)
+		count += (cells[y][x+1] == 1) ? 1 : 0;
+
+	if (y + 1 < fieldheight && x - 1 > 0)
+		count += (cells[y+1][x-1] == 1) ? 1 : 0;
+	if (y + 1 < fieldheight)
+		count += (cells[y+1][x] == 1) ? 1 : 0;
+	if (y + 1 < fieldheight && x + 1 < fieldwidth)
+		count += (cells[y+1][x+1] == 1) ? 1 : 0;
+	return count;
 }
 
 void draw()
@@ -132,7 +214,21 @@ void draw()
 	 * draws our screen
 	 */
 	wclear(stdscr);
-	mvprintw(fieldheight + 5, 0, "Arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.");
+	mvprintw(fieldheight + 5, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.");
+	if (should_run == 1)
+	{
+		wattron(stdscr, COLOR_PAIR(3));
+		mvprintw(fieldheight + 5 - 3, 0, "simulation running.");
+		wattroff(stdscr, COLOR_PAIR(3));
+	}
+	else
+	{
+		wattron(stdscr, COLOR_PAIR(1));
+		mvprintw(fieldheight + 5 - 3, 0, "simulation not running.");
+		wattroff(stdscr, COLOR_PAIR(1));
+	}
+
+	mvprintw(fieldheight + 5 - 4, 0, "%d neighbors", neighbor_count(cur.y, cur.x));
 	refresh();
 	/* render here */
 	//mvwin(field, 10, 10);
