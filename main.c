@@ -17,6 +17,7 @@ WINDOW *field;
 #define fieldheight 17 // +2 for 10 units
 int cells[fieldheight][fieldwidth];
 int tmpcells[fieldheight][fieldwidth];
+int ccolor;
 
 typedef struct cursor 
 {
@@ -98,6 +99,13 @@ void keyboard(int c)
 			}
 		}
 	}
+	if (c == 'v')
+	{
+		if (ccolor >= 8)
+			ccolor = 1;
+		else
+			ccolor++;
+	}
 }
 
 void setup()
@@ -113,15 +121,15 @@ void setup()
 	init_pair(1, COLOR_BLACK, COLOR_RED);
 	init_pair(2, COLOR_BLACK, COLOR_BLUE);
 	init_pair(3, COLOR_BLACK, COLOR_GREEN);
-	init_pair(4, COLOR_BLACK, COLOR_YELLOW);
+	init_pair(4, COLOR_BLACK, COLOR_BLACK);
 	init_pair(5, COLOR_BLACK, COLOR_MAGENTA);
 	init_pair(6, COLOR_BLACK, COLOR_CYAN);
 	init_pair(7, COLOR_BLACK, COLOR_WHITE);
-
+	init_pair(8, COLOR_BLACK, COLOR_YELLOW);
 
 	/* seed random generator */
 	srand(time(NULL));
-	//	squares[x].w = rand() % 10 + 1;
+	ccolor = 7;
 	cur.y = 1;
 	cur.x = 1;
 	cur.curs = ' ';
@@ -226,7 +234,7 @@ void draw()
 	 * draws our screen
 	 */
 	wclear(stdscr);
-	mvprintw(fieldheight + 5, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.\n 'c' to clear the field.");
+	mvprintw(fieldheight + 4, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.\n'c' to clear the field.\n'v' to change the cell color.");
 	if (should_run == 1)
 	{
 		wattron(stdscr, COLOR_PAIR(3));
@@ -248,15 +256,18 @@ void draw()
 	int i;
 	int n;
 	wclear(field);
+
 	for (i = 0; i < fieldheight; i++)
 	{
 		for (n = 0; n < fieldwidth; n++)
 		{
 			if (cells[i][n] == 1)
 			{
-				wattron(field, A_REVERSE);
+				//wattron(field, A_REVERSE);
+				wattron(field, COLOR_PAIR(ccolor));
 				mvwprintw(field, i, n, " ", cells[i][n]);
-				wattroff(field, A_REVERSE);
+				wattroff(field, COLOR_PAIR(ccolor));
+				//wattroff(field, A_REVERSE);
 			}
 		}
 	}
