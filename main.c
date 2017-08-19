@@ -17,6 +17,7 @@ WINDOW *field;
 #define fieldheight 17 // +2 for 10 units
 int cells[fieldheight][fieldwidth];
 int tmpcells[fieldheight][fieldwidth];
+int bcolor;
 int ccolor;
 
 typedef struct cursor 
@@ -106,6 +107,11 @@ void keyboard(int c)
 		else
 			ccolor++;
 	}
+	if (c == 'b')
+		if (bcolor >= 8)
+			bcolor = 1;
+		else
+			bcolor++;
 }
 
 void setup()
@@ -129,7 +135,8 @@ void setup()
 
 	/* seed random generator */
 	srand(time(NULL));
-	ccolor = 7;
+	bcolor = 7;
+	ccolor = 4;
 	cur.y = 1;
 	cur.x = 1;
 	cur.curs = ' ';
@@ -234,7 +241,7 @@ void draw()
 	 * draws our screen
 	 */
 	wclear(stdscr);
-	mvprintw(fieldheight + 4, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.\n'c' to clear the field.\n'v' to change the cell color.");
+	mvprintw(fieldheight + 4, 0, "arrow keys to move your cursor, space to flip the cell.\npress 'g' to start the simulation.\n's' to step one generation.\n'c' to clear the field.\n'v' to change the cell color.\n'b' to change the background color.");
 	if (should_run == 1)
 	{
 		wattron(stdscr, COLOR_PAIR(3));
@@ -275,6 +282,7 @@ void draw()
 	mvwaddch(field, cur.y, cur.x, cur.curs);
 	wattroff(field, COLOR_PAIR(3));
 	box(field, 0, 0);
+	wbkgd(field, COLOR_PAIR(bcolor));
 	wrefresh(field);
 }
 
